@@ -1,0 +1,178 @@
+{
+  "name": "LendLoop - Request notification",
+  "id": "9e643f5a-3b1c-4c0d-b04c-6c409fd0c39d",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lendloop-request",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "lendloop-request"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const crypto = require('crypto');\nconst secret = $env.LENDLOOP_SHARED_SECRET;\nif (!secret || secret.length < 32) throw new Error('LENDLOOP_SHARED_SECRET must be set to at least 32 characters');\nconst h = $input.first().json.headers || {};\nconst ts = String(h['x-lendloop-timestamp'] || '');\nconst signature = String(h['x-lendloop-signature'] || '');\nconst raw = (await this.helpers.getBinaryDataBuffer(0, 'data')).toString('utf8');\nconst expected = crypto.createHmac('sha256', secret).update(`${ts}.${raw}`).digest('hex');\nconst fresh = /^\\d{13}$/.test(ts) && Math.abs(Date.now() - Number(ts)) <= 5 * 60 * 1000;\nconst signatureValid = /^sha256=[0-9a-f]{64}$/.test(signature);\nlet valid = false;\nif (fresh && signatureValid) {\n  const expectedBytes = Buffer.from(expected, 'hex');\n  const actualBytes = Buffer.from(signature.slice(7), 'hex');\n  valid = actualBytes.length === expectedBytes.length && crypto.timingSafeEqual(actualBytes, expectedBytes);\n}\nreturn [{ json: { valid, event: valid ? JSON.parse(raw) : null } }];"
+      },
+      "id": "verify-signature",
+      "name": "Verify signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "valid",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-valid",
+      "name": "Signature valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        440,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const e = $json.event;\nif (!e || typeof e.eventId !== 'string' || typeof e.recipient?.email !== 'string') {\n  throw new Error('Invalid signed event payload');\n}\n// De-duplicate: Convex may re-send an event if our 200 response was lost.\nconst seen = ($getWorkflowStaticData('global').seen ||= {});\nif (seen[e.eventId]) return [{ json: { duplicate: true } }];\nseen[e.eventId] = Date.now();\nconst keys = Object.keys(seen);\nif (keys.length > 500) keys.sort((x, y) => seen[x] - seen[y]).slice(0, keys.length - 500).forEach((k) => delete seen[k]);\n\nconst t = e.toolName, who = e.counterpartName, d = `${e.loan.startDate} to ${e.loan.endDate}`;\nconst copy = {\n  request_created:  [`New request for ${t}`, `${who} would like to borrow ${t} (${d}). Open LendLoop to approve or decline.`],\n  request_approved: [`Approved: ${t}`, `${who} approved your request for ${t} (${d}).`],\n  request_declined: [`Declined: ${t}`, `${who} can't lend ${t} for ${d}. Try other dates or another tool.`],\n  loan_returned:    [`Returned: ${t}`, `${who} marked ${t} as returned. Thanks for being a good neighbor.`],\n  request_cancelled_by_borrower: [`Cancelled: ${t}`, `${who} cancelled their request for ${t} (${d}).`],\n  request_cancelled_by_owner: [`Listing removed: ${t}`, `${who} removed ${t} from the board. Your pending request has been cancelled.`],\n}[e.type];\nif (!copy) throw new Error('Unknown event type: ' + e.type);\nconst msg = { to: e.recipient.email, name: e.recipient.name, subject: copy[0], body: copy[1] };\n// MOCK delivery: logged only. Swap this node for Send Email / Slack / Discord using n8n credentials.\nconsole.log('[LendLoop notification]', JSON.stringify(msg));\nreturn [{ json: { duplicate: false, ...msg } }];"
+      },
+      "id": "build-and-send-notification",
+      "name": "Build and send notification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, duplicate: $json.duplicate }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-ok",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: 'invalid signature' }) }}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "id": "respond-401",
+      "name": "Respond 401",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        320
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify signature": {
+      "main": [
+        [
+          {
+            "node": "Signature valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Signature valid?": {
+      "main": [
+        [
+          {
+            "node": "Build and send notification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 401",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build and send notification": {
+      "main": [
+        [
+          {
+            "node": "Respond 200",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "cf9c5918-42ef-4f20-9b7d-d7e4f37a2bf3"
+  },
+  "active": false
+}
