@@ -1,6 +1,7 @@
 import type { AuthConfig } from "convex/server";
 
-const issuerDomain = process.env.CLERK_JWT_ISSUER_DOMAIN ?? "https://set-colt-2205.clerk.accounts.dev";
+// This is the generated development app's issuer; replace it when switching to a production Clerk app.
+const issuerDomain = "https://feasible-lioness-5019.clerk.accounts.dev";
 
 export default {
   providers: [{ domain: issuerDomain, applicationID: "convex" }],

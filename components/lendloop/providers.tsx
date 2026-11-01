@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { ClerkProvider, useAuth } from "@clerk/nextjs";
+import { ui } from "@clerk/ui";
 import { shadcn } from "@clerk/ui/themes";
 import { ThemeProvider } from "next-themes";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
@@ -18,7 +19,7 @@ const convex = new ConvexReactClient(convexUrl);
 
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
-    <ClerkProvider appearance={{ theme: shadcn }}>
+    <ClerkProvider appearance={{ theme: shadcn }} ui={ui}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
           {children}

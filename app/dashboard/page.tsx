@@ -1,5 +1,7 @@
+import { auth } from "@clerk/nextjs/server";
 import { DashboardClient } from "@/components/lendloop/dashboard-client";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  await auth.protect();
   return <DashboardClient />;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { ArrowDown, ArrowRight, Hammer, Leaf, Repeat2, Sparkles, TentTree, Wrench } from "lucide-react";
@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { EmptyState, LoadingCards } from "@/components/lendloop/shared";
 
 export function HomePage() {
+  const { isLoaded, isSignedIn } = useAuth();
   const tools = useQuery(api.tools.listPublic);
 
   return (
@@ -22,21 +23,24 @@ export function HomePage() {
         </Link>
         <nav className="flex items-center gap-3" aria-label="Main navigation">
           <Link className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline" href="#tools">Browse tools</Link>
-          <SignedOut>
-            <SignInButton mode="modal">
-              <Button size="sm" variant="outline">Sign in</Button>
-            </SignInButton>
-            <SignUpButton mode="modal">
-              <Button size="sm">Join LendLoop</Button>
-            </SignUpButton>
-          </SignedOut>
-          <SignedIn>
-            <Button render={<Link href="/dashboard" />} size="sm" variant="outline">
-              Open workspace
-              <ArrowRight data-icon="inline-end" />
-            </Button>
-            <UserButton />
-          </SignedIn>
+          {isLoaded && (isSignedIn ? (
+            <>
+              <Button render={<Link href="/dashboard" />} size="sm" variant="outline">
+                Open workspace
+                <ArrowRight data-icon="inline-end" />
+              </Button>
+              <UserButton />
+            </>
+          ) : (
+            <>
+              <SignInButton mode="modal">
+                <Button size="sm" variant="outline">Sign in</Button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <Button size="sm">Join LendLoop</Button>
+              </SignUpButton>
+            </>
+          ))}
         </nav>
       </header>
 
@@ -50,23 +54,24 @@ export function HomePage() {
             <h1 className="hero-title">Good tools.<br /><span>Closer to home.</span></h1>
             <p className="hero-lede">Borrow what you need. Lend what you don&apos;t. LendLoop makes it easier to share useful things with the people around you.</p>
             <div className="flex flex-wrap items-center gap-3">
-              <SignedOut>
-                <SignInButton mode="modal">
-                  <Button size="lg">
-                    Sign in to lend or borrow
-                    <ArrowRight data-icon="inline-end" />
-                  </Button>
-                </SignInButton>
-                <SignUpButton mode="modal">
-                  <Button size="lg" variant="ghost">Create an account</Button>
-                </SignUpButton>
-              </SignedOut>
-              <SignedIn>
+              {isLoaded && (isSignedIn ? (
                 <Button render={<Link href="/dashboard" />} size="lg">
                   Open your board
                   <ArrowRight data-icon="inline-end" />
                 </Button>
-              </SignedIn>
+              ) : (
+                <>
+                  <SignInButton mode="modal">
+                    <Button size="lg">
+                      Sign in to lend or borrow
+                      <ArrowRight data-icon="inline-end" />
+                    </Button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <Button size="lg" variant="ghost">Create an account</Button>
+                  </SignUpButton>
+                </>
+              ))}
             </div>
             <a className="hero-scroll-link" href="#tools">
               See what&apos;s available
@@ -103,14 +108,13 @@ export function HomePage() {
             <h2 className="section-title" id="tools-title">Available to borrow</h2>
             <p className="text-muted-foreground">A live list of tools neighbors have marked available. Owner details stay private on this page.</p>
           </div>
-          <SignedOut>
+          {isLoaded && (isSignedIn ? (
+            <Button render={<Link href="/dashboard" />} variant="outline">Open workspace</Button>
+          ) : (
             <SignInButton mode="modal">
               <Button variant="outline">Sign in to request</Button>
             </SignInButton>
-          </SignedOut>
-          <SignedIn>
-            <Button render={<Link href="/dashboard" />} variant="outline">Open workspace</Button>
-          </SignedIn>
+          ))}
         </div>
 
         {tools === undefined ? (
