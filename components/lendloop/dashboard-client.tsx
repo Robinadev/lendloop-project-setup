@@ -7,7 +7,7 @@ import { api } from "@/convex/_generated/api";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { ArrowLeft, Repeat2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -71,7 +71,7 @@ export function DashboardClient() {
           <CardHeader><CardTitle>Sign in to open your board</CardTitle></CardHeader>
           <CardContent className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">Your lending workspace is available to signed-in neighbors.</p>
-            <Button render={<Link href="/sign-in" />}>Sign in</Button>
+            <Link className={buttonVariants()} href="/sign-in">Sign in</Link>
           </CardContent>
         </Card>
       </main>
@@ -109,10 +109,10 @@ export function DashboardClient() {
       </header>
 
       <section className="dashboard-intro">
-        <Button render={<Link href="/" />} size="sm" variant="ghost">
+        <Link className={buttonVariants({ size: "sm", variant: "ghost" })} href="/">
           <ArrowLeft data-icon="inline-start" />
           Public board
-        </Button>
+        </Link>
         <p className="eyebrow">Your neighborhood</p>
         <h1 className="dashboard-title">A little more shared.</h1>
         <p className="max-w-2xl text-muted-foreground">Browse what&apos;s available, keep your listings current, and make borrowing straightforward for everyone.</p>

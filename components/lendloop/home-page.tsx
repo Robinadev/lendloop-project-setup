@@ -6,7 +6,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { ArrowDown, ArrowRight, Hammer, Leaf, Repeat2, Sparkles, TentTree, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState, LoadingCards } from "@/components/lendloop/shared";
 
@@ -25,10 +25,10 @@ export function HomePage() {
           <Link className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline" href="#tools">Browse tools</Link>
           {isLoaded && (isSignedIn ? (
             <>
-              <Button render={<Link href="/dashboard" />} size="sm" variant="outline">
+              <Link className={buttonVariants({ size: "sm", variant: "outline" })} href="/dashboard">
                 Open workspace
                 <ArrowRight data-icon="inline-end" />
-              </Button>
+              </Link>
               <UserButton />
             </>
           ) : (
@@ -55,10 +55,10 @@ export function HomePage() {
             <p className="hero-lede">Borrow what you need. Lend what you don&apos;t. LendLoop makes it easier to share useful things with the people around you.</p>
             <div className="flex flex-wrap items-center gap-3">
               {isLoaded && (isSignedIn ? (
-                <Button render={<Link href="/dashboard" />} size="lg">
+                <Link className={buttonVariants({ size: "lg" })} href="/dashboard">
                   Open your board
                   <ArrowRight data-icon="inline-end" />
-                </Button>
+                </Link>
               ) : (
                 <>
                   <SignInButton mode="modal">
@@ -109,7 +109,7 @@ export function HomePage() {
             <p className="text-muted-foreground">A live list of tools neighbors have marked available. Owner details stay private on this page.</p>
           </div>
           {isLoaded && (isSignedIn ? (
-            <Button render={<Link href="/dashboard" />} variant="outline">Open workspace</Button>
+            <Link className={buttonVariants({ variant: "outline" })} href="/dashboard">Open workspace</Link>
           ) : (
             <SignInButton mode="modal">
               <Button variant="outline">Sign in to request</Button>
