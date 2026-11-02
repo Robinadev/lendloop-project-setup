@@ -2,17 +2,14 @@
 
 import Link from "next/link";
 import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { ArrowDown, ArrowRight, Hammer, Leaf, Repeat2, Sparkles, TentTree, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { EmptyState, LoadingCards } from "@/components/lendloop/shared";
+import { PublicShelf } from "@/components/lendloop/public-shelf";
 
 export function HomePage() {
   const { isLoaded, isSignedIn } = useAuth();
-  const tools = useQuery(api.tools.listPublic);
 
   return (
     <main>
@@ -117,26 +114,7 @@ export function HomePage() {
           ))}
         </div>
 
-        {tools === undefined ? (
-          <LoadingCards label="available tools" />
-        ) : tools.length === 0 ? (
-          <EmptyState
-            title="The shelf is ready for its first tool"
-            description="When someone lists an available tool, it will appear here."
-            icon={Hammer}
-          />
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {tools.map((tool) => (
-              <Card key={tool.key}>
-                <CardHeader>
-                  <CardDescription>{tool.category}</CardDescription>
-                  <CardTitle className="text-lg">{tool.name}</CardTitle>
-                </CardHeader>
-              </Card>
-            ))}
-          </div>
-        )}
+        <PublicShelf />
       </section>
 
       <footer className="site-wrap site-footer">
