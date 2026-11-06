@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { CATEGORIES, CONDITIONS } from "./constants";
-import { isOnLoan, requireUser, text } from "./lib";
+import { isOnLoan, requireUser, text, today } from "./lib";
 import { queueNotification } from "./notifications";
 
 const fields = {
@@ -48,14 +48,18 @@ export const listPublic = query({
   args: {},
   returns: v.array(publicToolValidator),
   handler: async (ctx) => {
-    const tools = await ctx.db.query("tools").order("desc").take(200);
-    const available = [];
-    for (const tool of tools) {
-      if (!tool.archivedAt && !(await isOnLoan(ctx, tool._id))) {
-        available.push({ key: tool._id as string, name: tool.name, category: tool.category });
-      }
-    }
-    return available;
+    const day = today();
+    const [tools, approvedLoans] = await Promise.all([
+      ctx.db.query("tools").order("desc").take(200),
+      ctx.db.query("loans").withIndex("by_status", (q) => q.eq("status", "approved")).collect(),
+    ]);
+    const onLoanToolIds = new Set(
+      approvedLoans.filter((loan) => loan.startDate <= day).map((loan) => loan.toolId),
+    );
+
+    return tools
+      .filter((tool) => !tool.archivedAt && !onLoanToolIds.has(tool._id))
+      .map((tool) => ({ key: tool._id as string, name: tool.name, category: tool.category }));
   },
 });
 
