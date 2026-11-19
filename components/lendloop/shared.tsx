@@ -19,6 +19,15 @@ export type ActionRunner = (
 
 export type LoanStatus = "pending" | "approved" | "declined" | "returned" | "cancelled";
 
+export function SampleDataNotice() {
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
+      <Badge variant="secondary">Sample data</Badge>
+      <span>Examples only — nothing here has been saved to your account.</span>
+    </div>
+  );
+}
+
 export function DashboardError({ message }: { message: string }) {
   return (
     <Alert variant="destructive">
