@@ -19,10 +19,17 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const requiredEnvironmentVariables = [
+    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+    "CLERK_SECRET_KEY",
+    "NEXT_PUBLIC_CONVEX_URL",
+  ];
+  const missingEnvironmentVariables = requiredEnvironmentVariables.filter((name) => !process.env[name]);
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
-        <AppProviders>{children}</AppProviders>
+        <AppProviders missingEnvironmentVariables={missingEnvironmentVariables}>{children}</AppProviders>
       </body>
     </html>
   );

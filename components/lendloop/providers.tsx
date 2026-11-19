@@ -7,25 +7,61 @@ import { shadcn } from "@clerk/ui/themes";
 import { ThemeProvider } from "next-themes";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { ConvexReactClient } from "convex/react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Toaster } from "@/components/ui/sonner";
 
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+const convex = convexUrl ? new ConvexReactClient(convexUrl) : null;
 
-if (!convexUrl) {
-  throw new Error("Missing NEXT_PUBLIC_CONVEX_URL. Connect the Convex integration to this project.");
+function IntegrationSetupNotice({ missingVariables }: { missingVariables: string[] }) {
+  return (
+    <main className="site-wrap flex min-h-screen items-center py-12">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+        <div>
+          <p className="eyebrow">LendLoop setup</p>
+          <h1 className="dashboard-title">Connect the last piece.</h1>
+          <p className="mt-3 text-muted-foreground">
+            LendLoop needs its Clerk sign-in and Convex board settings before the app can load.
+          </p>
+        </div>
+        <Alert>
+          <AlertTitle>Required integration settings are missing</AlertTitle>
+          <AlertDescription>
+            <p>Missing environment variables: <code>{missingVariables.join(", ")}</code>.</p>
+            <p>Check the Clerk and Convex integrations in this project&apos;s settings, then refresh the preview after the values are available.</p>
+          </AlertDescription>
+        </Alert>
+      </div>
+    </main>
+  );
 }
 
-const convex = new ConvexReactClient(convexUrl);
+export function AppProviders({
+  children,
+  missingEnvironmentVariables,
+}: {
+  children: ReactNode;
+  missingEnvironmentVariables: string[];
+}) {
+  const missingVariables = [
+    ...new Set([
+      ...missingEnvironmentVariables,
+      ...(!convex ? ["NEXT_PUBLIC_CONVEX_URL"] : []),
+    ]),
+  ];
 
-export function AppProviders({ children }: { children: ReactNode }) {
   return (
-    <ClerkProvider appearance={{ theme: shadcn }} ui={ui}>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-          {children}
-          <Toaster position="top-right" />
-        </ConvexProviderWithClerk>
-      </ThemeProvider>
-    </ClerkProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      {missingVariables.length > 0 || !convex ? (
+        <IntegrationSetupNotice missingVariables={missingVariables} />
+      ) : (
+        <ClerkProvider appearance={{ theme: shadcn }} ui={ui}>
+          <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+            {children}
+            <Toaster position="top-right" />
+          </ConvexProviderWithClerk>
+        </ClerkProvider>
+      )}
+    </ThemeProvider>
   );
 }
