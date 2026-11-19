@@ -18,18 +18,33 @@ export const viewport: Viewport = {
   ],
 };
 
+function getConvexUrl() {
+  const configuredUrl = process.env.NEXT_PUBLIC_CONVEX_URL?.trim();
+  if (configuredUrl) return configuredUrl;
+
+  const deploymentName = process.env.CONVEX_DEPLOY_KEY?.match(
+    /^(?:dev|prod):([a-z0-9](?:[a-z0-9-]*[a-z0-9])?)\|/i,
+  )?.[1];
+
+  return deploymentName ? `https://${deploymentName}.convex.cloud` : undefined;
+}
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const convexUrl = getConvexUrl();
   const requiredEnvironmentVariables = [
     "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
     "CLERK_SECRET_KEY",
-    "NEXT_PUBLIC_CONVEX_URL",
   ];
   const missingEnvironmentVariables = requiredEnvironmentVariables.filter((name) => !process.env[name]);
+
+  if (!convexUrl) missingEnvironmentVariables.push("NEXT_PUBLIC_CONVEX_URL");
 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
-        <AppProviders missingEnvironmentVariables={missingEnvironmentVariables}>{children}</AppProviders>
+        <AppProviders convexUrl={convexUrl} missingEnvironmentVariables={missingEnvironmentVariables}>
+          {children}
+        </AppProviders>
       </body>
     </html>
   );

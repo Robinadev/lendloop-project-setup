@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { ClerkProvider, useAuth } from "@clerk/nextjs";
 import { ui } from "@clerk/ui";
 import { shadcn } from "@clerk/ui/themes";
@@ -9,9 +9,6 @@ import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { ConvexReactClient } from "convex/react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Toaster } from "@/components/ui/sonner";
-
-const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
-const convex = convexUrl ? new ConvexReactClient(convexUrl) : null;
 
 function IntegrationSetupNotice({ missingVariables }: { missingVariables: string[] }) {
   return (
@@ -38,11 +35,14 @@ function IntegrationSetupNotice({ missingVariables }: { missingVariables: string
 
 export function AppProviders({
   children,
+  convexUrl,
   missingEnvironmentVariables,
 }: {
   children: ReactNode;
+  convexUrl?: string;
   missingEnvironmentVariables: string[];
 }) {
+  const convex = useMemo(() => (convexUrl ? new ConvexReactClient(convexUrl) : null), [convexUrl]);
   const missingVariables = [
     ...new Set([
       ...missingEnvironmentVariables,
