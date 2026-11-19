@@ -28,8 +28,9 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { CATEGORIES } from "@/convex/constants";
 import type { ActionRunner, LoanStatus } from "@/components/lendloop/shared";
-import { EmptyState, formatDateRange, LoadingCards, StatusBadge } from "@/components/lendloop/shared";
+import { EmptyState, formatDateRange, LoadingCards, SampleDataNotice, StatusBadge } from "@/components/lendloop/shared";
 import { ToolForm } from "@/components/lendloop/tool-form";
+import { SAMPLE_INCOMING, SAMPLE_LISTINGS, SAMPLE_REQUESTS, SAMPLE_TOOLS } from "@/components/lendloop/demo-data";
 
 type BrowseTool = {
   _id: Id<"tools">;
@@ -41,6 +42,7 @@ type BrowseTool = {
   ownerTrusted: boolean;
   mine: boolean;
   available: boolean;
+  demo?: boolean;
 };
 
 type LoanItem = {
@@ -52,10 +54,12 @@ type LoanItem = {
   ownerName: string;
   borrowerName: string;
   overdue: boolean;
+  demo?: boolean;
 };
 
 type Listing = Pick<Doc<"tools">, "_id" | "name" | "category" | "condition" | "description"> & {
   available: boolean;
+  demo?: boolean;
 };
 
 function todayString() {
@@ -93,6 +97,24 @@ export function BrowseView({ isAdmin, run }: { isAdmin: boolean; run: ActionRunn
 
   if (tools === undefined) return <LoadingCards label="tools" />;
 
+  const showingSamples = tools.length === 0;
+  const visibleTools: BrowseTool[] = showingSamples
+    ? SAMPLE_TOOLS
+        .filter((tool) => category === "all" || tool.category === category)
+        .map((tool) => ({
+          _id: tool.key as Id<"tools">,
+          name: tool.name,
+          category: tool.category,
+          condition: tool.condition,
+          description: tool.description,
+          ownerName: tool.ownerName,
+          ownerTrusted: tool.ownerTrusted,
+          mine: false,
+          available: true,
+          demo: true,
+        }))
+    : tools as BrowseTool[];
+
   return (
     <section className="flex flex-col gap-5" aria-labelledby="browse-title">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -117,20 +139,25 @@ export function BrowseView({ isAdmin, run }: { isAdmin: boolean; run: ActionRunn
         </Field>
       </div>
 
-      {tools.length === 0 ? (
+      {visibleTools.length === 0 ? (
         <EmptyState
           title={category === "all" ? "No listings yet" : `No ${category.toLowerCase()} listings yet`}
           description="When a neighbor adds a tool, it will show up here."
           icon={PackageOpen}
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {(tools as BrowseTool[]).map((tool) => (
+        <div className="flex flex-col gap-4">
+          {showingSamples ? <SampleDataNotice /> : null}
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {visibleTools.map((tool) => (
             <Card className="h-full" key={tool._id}>
               <CardHeader>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <Badge variant="secondary">{tool.category}</Badge>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="secondary">{tool.category}</Badge>
+                      {tool.demo ? <Badge variant="outline">Example</Badge> : null}
+                    </div>
                     <CardTitle className="mt-3 text-lg">{tool.name}</CardTitle>
                   </div>
                   <Badge variant={tool.available ? "outline" : "secondary"}>
@@ -188,7 +215,7 @@ export function BrowseView({ isAdmin, run }: { isAdmin: boolean; run: ActionRunn
                 ) : null}
               </CardContent>
               <CardFooter className="flex flex-wrap gap-2">
-                {tool.available && !tool.mine ? (
+                {tool.available && !tool.mine && !tool.demo ? (
                   <Button
                     disabled={busyId === tool._id}
                     onClick={() => {
@@ -203,7 +230,7 @@ export function BrowseView({ isAdmin, run }: { isAdmin: boolean; run: ActionRunn
                   </Button>
                 ) : null}
                 {tool.mine ? <Badge variant="outline">Your listing</Badge> : null}
-                {isAdmin && !tool.mine ? (
+                {isAdmin && !tool.mine && !tool.demo ? (
                   <Button onClick={() => void handleRemove(tool._id)} size="sm" variant="destructive">
                     <Archive data-icon="inline-start" />
                     Remove listing
@@ -212,6 +239,7 @@ export function BrowseView({ isAdmin, run }: { isAdmin: boolean; run: ActionRunn
               </CardFooter>
             </Card>
           ))}
+          </div>
         </div>
       )}
     </section>
@@ -230,6 +258,16 @@ export function ListingsView({ run }: { run: ActionRunner }) {
   };
 
   if (listings === undefined) return <LoadingCards label="your listings" />;
+
+  const showingSamples = listings.length === 0;
+  const visibleListings: Listing[] = showingSamples
+    ? SAMPLE_LISTINGS.map((tool) => ({
+        ...tool,
+        _id: tool.key as Id<"tools">,
+        available: true,
+        demo: true,
+      }))
+    : listings as Listing[];
 
   return (
     <section className="flex flex-col gap-5" aria-labelledby="listings-title">
@@ -257,7 +295,7 @@ export function ListingsView({ run }: { run: ActionRunner }) {
         </Card>
       ) : null}
 
-      {listings.length === 0 ? (
+      {visibleListings.length === 0 ? (
         <EmptyState
           title="Your shelf is waiting"
           description="List one of the tools you already own to help your neighborhood get more done."
@@ -265,8 +303,10 @@ export function ListingsView({ run }: { run: ActionRunner }) {
           action={<Button onClick={() => setShowForm(true)}>Create your first listing</Button>}
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {(listings as Listing[]).map((tool) => (
+        <div className="flex flex-col gap-4">
+          {showingSamples ? <SampleDataNotice /> : null}
+          <div className="grid gap-4 md:grid-cols-2">
+          {visibleListings.map((tool) => (
             <Card key={tool._id}>
               {editingId === tool._id ? (
                 <CardContent>
@@ -283,7 +323,10 @@ export function ListingsView({ run }: { run: ActionRunner }) {
                   <CardHeader>
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <Badge variant="secondary">{tool.category}</Badge>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="secondary">{tool.category}</Badge>
+                          {tool.demo ? <Badge variant="outline">Example</Badge> : null}
+                        </div>
                         <CardTitle className="mt-3 text-lg">{tool.name}</CardTitle>
                       </div>
                       <Badge variant={tool.available ? "outline" : "secondary"}>
@@ -296,16 +339,23 @@ export function ListingsView({ run }: { run: ActionRunner }) {
                     <p className="text-sm text-muted-foreground">Condition: {tool.condition}</p>
                   </CardContent>
                   <CardFooter className="flex flex-wrap gap-2">
-                    <Button onClick={() => setEditingId(tool._id)} size="sm" variant="outline">Edit</Button>
-                    <Button onClick={() => void handleRemove(tool._id)} size="sm" variant="destructive">
-                      <Archive data-icon="inline-start" />
-                      Remove
-                    </Button>
+                    {tool.demo ? (
+                      <Badge variant="outline">Example listing</Badge>
+                    ) : (
+                      <>
+                        <Button onClick={() => setEditingId(tool._id)} size="sm" variant="outline">Edit</Button>
+                        <Button onClick={() => void handleRemove(tool._id)} size="sm" variant="destructive">
+                          <Archive data-icon="inline-start" />
+                          Remove
+                        </Button>
+                      </>
+                    )}
                   </CardFooter>
                 </>
               )}
             </Card>
           ))}
+          </div>
         </div>
       )}
     </section>
@@ -325,6 +375,11 @@ export function RequestsView({ run }: { run: ActionRunner }) {
 
   if (requests === undefined) return <LoadingCards label="your requests" />;
 
+  const showingSamples = requests.length === 0;
+  const visibleRequests: LoanItem[] = showingSamples
+    ? SAMPLE_REQUESTS.map((loan) => ({ ...loan, _id: loan.key as Id<"loans">, demo: true }))
+    : requests as LoanItem[];
+
   return (
     <section className="flex flex-col gap-5" aria-labelledby="requests-title">
       <div>
@@ -332,23 +387,26 @@ export function RequestsView({ run }: { run: ActionRunner }) {
         <h2 className="section-title" id="requests-title">Your requests</h2>
         <p className="text-sm text-muted-foreground">Track dates and decisions for tools you&apos;ve requested.</p>
       </div>
-      {requests.length === 0 ? (
+      {visibleRequests.length === 0 ? (
         <EmptyState title="No requests yet" description="Browse the shared shelf and request dates when you need a tool." icon={ClipboardList} />
       ) : (
-        <div className="grid gap-3">
-          {requests.map((loan) => (
+        <div className="flex flex-col gap-4">
+          {showingSamples ? <SampleDataNotice /> : null}
+          <div className="grid gap-3">
+          {visibleRequests.map((loan) => (
             <Card key={loan._id}>
               <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-4">
                 <div className="flex min-w-0 flex-col gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-base font-medium">{loan.toolName}</h3>
                     <StatusBadge status={loan.status} overdue={loan.overdue} />
+                    {loan.demo ? <Badge variant="outline">Example</Badge> : null}
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {formatDateRange(loan.startDate, loan.endDate)} · lender {loan.ownerName}
                   </p>
                 </div>
-                {loan.status === "pending" ? (
+                {loan.status === "pending" && !loan.demo ? (
                   <Button disabled={busyId === loan._id} onClick={() => void cancel(loan._id)} size="sm" variant="outline">
                     <X data-icon="inline-start" />
                     Cancel request
@@ -357,6 +415,7 @@ export function RequestsView({ run }: { run: ActionRunner }) {
               </CardContent>
             </Card>
           ))}
+          </div>
         </div>
       )}
     </section>
@@ -377,6 +436,11 @@ export function IncomingView({ run }: { run: ActionRunner }) {
 
   if (incoming === undefined) return <LoadingCards label="incoming requests" />;
 
+  const showingSamples = incoming.length === 0;
+  const visibleIncoming: LoanItem[] = showingSamples
+    ? SAMPLE_INCOMING.map((loan) => ({ ...loan, _id: loan.key as Id<"loans">, demo: true }))
+    : incoming as LoanItem[];
+
   return (
     <section className="flex flex-col gap-5" aria-labelledby="incoming-title">
       <div>
@@ -384,24 +448,27 @@ export function IncomingView({ run }: { run: ActionRunner }) {
         <h2 className="section-title" id="incoming-title">Incoming requests</h2>
         <p className="text-sm text-muted-foreground">Approve or decline requests for your tools, then mark returns.</p>
       </div>
-      {incoming.length === 0 ? (
+      {visibleIncoming.length === 0 ? (
         <EmptyState title="Nothing to review" description="Requests for your listings will appear here." icon={ClipboardList} />
       ) : (
-        <div className="grid gap-3">
-          {incoming.map((loan) => (
+        <div className="flex flex-col gap-4">
+          {showingSamples ? <SampleDataNotice /> : null}
+          <div className="grid gap-3">
+          {visibleIncoming.map((loan) => (
             <Card key={loan._id}>
               <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-4">
                 <div className="flex min-w-0 flex-col gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-base font-medium">{loan.toolName}</h3>
                     <StatusBadge status={loan.status} overdue={loan.overdue} />
+                    {loan.demo ? <Badge variant="outline">Example</Badge> : null}
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {formatDateRange(loan.startDate, loan.endDate)} · requested by {loan.borrowerName}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {loan.status === "pending" ? (
+                  {loan.status === "pending" && !loan.demo ? (
                     <>
                       <Button
                         disabled={busyId === loan._id}
@@ -422,7 +489,7 @@ export function IncomingView({ run }: { run: ActionRunner }) {
                       </Button>
                     </>
                   ) : null}
-                  {loan.status === "approved" ? (
+                  {loan.status === "approved" && !loan.demo ? (
                     <Button
                       disabled={busyId === loan._id}
                       onClick={() => void act(loan._id, () => markReturned({ loanId: loan._id }), "Loan marked returned")}
@@ -437,6 +504,7 @@ export function IncomingView({ run }: { run: ActionRunner }) {
               </CardContent>
             </Card>
           ))}
+          </div>
         </div>
       )}
     </section>

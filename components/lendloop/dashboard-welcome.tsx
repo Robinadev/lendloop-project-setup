@@ -14,6 +14,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SAMPLE_TOOLS } from "@/components/lendloop/demo-data";
+import { SampleDataNotice } from "@/components/lendloop/shared";
 
 export function DashboardWelcome({
   name,
@@ -26,6 +28,8 @@ export function DashboardWelcome({
 }) {
   const shelf = useQuery(api.tools.listPublic);
   const firstName = name.trim().split(/\s+/)[0] || "neighbor";
+  const showingSamples = shelf?.length === 0;
+  const displayedShelf = shelf?.length ? shelf : SAMPLE_TOOLS;
 
   return (
     <section
@@ -62,7 +66,7 @@ export function DashboardWelcome({
               <CardTitle className="mt-1 text-xl">Available nearby</CardTitle>
             </div>
             {shelf !== undefined ? (
-              <Badge variant="secondary">{shelf.length} {shelf.length === 1 ? "tool" : "tools"}</Badge>
+              <Badge variant="secondary">{displayedShelf.length} {displayedShelf.length === 1 ? "tool" : "tools"}</Badge>
             ) : null}
           </div>
         </CardHeader>
@@ -73,9 +77,11 @@ export function DashboardWelcome({
               <Skeleton className="h-5 w-3/4" />
               <Skeleton className="h-5 w-1/2" />
             </div>
-          ) : shelf.length > 0 ? (
-            <ul aria-label="Available tools" className="flex flex-col gap-2">
-              {shelf.slice(0, 3).map((tool) => (
+          ) : displayedShelf.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {showingSamples ? <SampleDataNotice /> : null}
+              <ul aria-label={showingSamples ? "Sample available tools" : "Available tools"} className="flex flex-col gap-2">
+              {displayedShelf.slice(0, 3).map((tool) => (
                 <li
                   className="flex items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3"
                   key={tool.key}
@@ -84,7 +90,8 @@ export function DashboardWelcome({
                   <Badge variant="outline">{tool.category}</Badge>
                 </li>
               ))}
-            </ul>
+              </ul>
+            </div>
           ) : (
             <div className="rounded-xl border border-dashed bg-muted/30 p-4">
               <p className="font-medium">The shelf is ready for its first listing.</p>
