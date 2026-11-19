@@ -8,7 +8,13 @@ export default function SignUpPage() {
       title="Sharing starts with one small yes."
       description="Create an account to lend a tool, borrow for a few days, and keep the local shelf moving."
     >
-      <SignUp routing="path" path="/sign-up" signInUrl="/sign-in" fallbackRedirectUrl="/dashboard" />
+      <SignUp
+        routing="path"
+        path="/sign-up"
+        signInUrl="/sign-in"
+        fallbackRedirectUrl="/dashboard"
+        forceRedirectUrl="/dashboard"
+      />
     </AuthShell>
   );
 }
