@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminView, BrowseView, IncomingView, ListingsView, RequestsView } from "@/components/lendloop/dashboard-views";
+import { DashboardWelcome } from "@/components/lendloop/dashboard-welcome";
 import { DashboardError, LoadingCards, type ActionRunner } from "@/components/lendloop/shared";
 
 function errorText(error: unknown) {
@@ -117,6 +118,12 @@ export function DashboardClient() {
         <h1 className="dashboard-title">A little more shared.</h1>
         <p className="max-w-2xl text-muted-foreground">Browse what&apos;s available, keep your listings current, and make borrowing straightforward for everyone.</p>
       </section>
+
+      <DashboardWelcome
+        name={profile.name}
+        onBrowse={() => setTab("browse")}
+        onList={() => setTab("listings")}
+      />
 
       {actionError ? <div className="mb-5"><DashboardError message={actionError} /></div> : null}
 

@@ -30,10 +30,10 @@ export function HomePage() {
             </>
           ) : (
             <>
-              <SignInButton mode="modal">
+              <SignInButton forceRedirectUrl="/dashboard" mode="modal">
                 <Button size="sm" variant="outline">Sign in</Button>
               </SignInButton>
-              <SignUpButton mode="modal">
+              <SignUpButton forceRedirectUrl="/dashboard" mode="modal">
                 <Button size="sm">Join LendLoop</Button>
               </SignUpButton>
             </>
@@ -58,13 +58,13 @@ export function HomePage() {
                 </Link>
               ) : (
                 <>
-                  <SignInButton mode="modal">
+                  <SignInButton forceRedirectUrl="/dashboard" mode="modal">
                     <Button size="lg">
                       Sign in to lend or borrow
                       <ArrowRight data-icon="inline-end" />
                     </Button>
                   </SignInButton>
-                  <SignUpButton mode="modal">
+                  <SignUpButton forceRedirectUrl="/dashboard" mode="modal">
                     <Button size="lg" variant="ghost">Create an account</Button>
                   </SignUpButton>
                 </>
@@ -114,7 +114,7 @@ export function HomePage() {
           ))}
         </div>
 
-        <PublicShelf />
+        <PublicShelf isSignedIn={Boolean(isSignedIn)} />
       </section>
 
       <footer className="site-wrap site-footer">

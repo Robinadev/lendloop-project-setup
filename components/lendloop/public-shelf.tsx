@@ -1,11 +1,12 @@
 "use client";
 
 import { Component, Fragment, type ReactNode } from "react";
+import Link from "next/link";
 import { useQuery } from "convex/react";
 import { Hammer } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState, LoadingCards } from "@/components/lendloop/shared";
 
@@ -44,7 +45,7 @@ class PublicShelfBoundary extends Component<{ children: ReactNode }, BoundarySta
   }
 }
 
-function PublicShelfResults() {
+function PublicShelfResults({ isSignedIn }: { isSignedIn: boolean }) {
   const tools = useQuery(api.tools.listPublic);
 
   if (tools === undefined) {
@@ -55,8 +56,13 @@ function PublicShelfResults() {
     return (
       <EmptyState
         title="The shelf is ready for its first tool"
-        description="When someone lists an available tool, it will appear here."
+        description="When someone lists an available tool, it will appear here. Be the first to share something useful."
         icon={Hammer}
+        action={
+          <Link className={buttonVariants({ size: "sm" })} href={isSignedIn ? "/dashboard" : "/sign-up"}>
+            {isSignedIn ? "Open your workspace" : "Join and share a tool"}
+          </Link>
+        }
       />
     );
   }
@@ -75,10 +81,10 @@ function PublicShelfResults() {
   );
 }
 
-export function PublicShelf() {
+export function PublicShelf({ isSignedIn }: { isSignedIn: boolean }) {
   return (
     <PublicShelfBoundary>
-      <PublicShelfResults />
+      <PublicShelfResults isSignedIn={isSignedIn} />
     </PublicShelfBoundary>
   );
 }
